@@ -453,15 +453,15 @@ class CreateGroupPayload extends Builder<Map<String, dynamic>> {
 class ChannelPermissionsBuilder extends Builder<int> {
   int _raw = 0;
 
+  bool? manageChannel;
   bool? viewChannel;
   bool? sendMessages;
   bool? manageMessages;
-  bool? manageChannel;
-  bool? voiceConnect;
   bool? inviteOthers;
   bool? embedLinks;
   bool? uploadFiles;
   bool? masquerade;
+  bool? voiceConnect;
 
   ChannelPermissionsBuilder();
 
@@ -472,15 +472,15 @@ class ChannelPermissionsBuilder extends Builder<int> {
   int build() {
     _raw = 0;
 
+    _apply(manageChannel, 1 << 0);
     _apply(viewChannel, 1 << 20);
     _apply(sendMessages, 1 << 22);
     _apply(manageMessages, 1 << 23);
-    _apply(manageChannel, 1 << 0);
-    _apply(voiceConnect, 1 << 30);
     _apply(inviteOthers, 1 << 25);
     _apply(embedLinks, 1 << 26);
     _apply(uploadFiles, 1 << 27);
     _apply(masquerade, 1 << 28);
+    _apply(voiceConnect, 1 << 30);
 
     return _raw;
   }
