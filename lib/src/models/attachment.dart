@@ -1,4 +1,4 @@
-import 'package:revolt/src/utils/enum.dart';
+import 'package:revolt_bullseye/src/utils/enum.dart';
 
 /// Attachment information
 class Attachment {

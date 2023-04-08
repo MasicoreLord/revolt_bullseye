@@ -1,8 +1,8 @@
-import 'package:revolt/src/models/attachment.dart';
-import 'package:revolt/src/models/channel.dart';
-import 'package:revolt/src/models/server.dart';
-import 'package:revolt/src/models/ulid.dart';
-import 'package:revolt/src/utils/enum.dart';
+import 'package:revolt_bullseye/src/models/attachment.dart';
+import 'package:revolt_bullseye/src/models/channel.dart';
+import 'package:revolt_bullseye/src/models/server.dart';
+import 'package:revolt_bullseye/src/models/ulid.dart';
+import 'package:revolt_bullseye/src/utils/enum.dart';
 
 /// Channel invite
 class ChannelInvite {

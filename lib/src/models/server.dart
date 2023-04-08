@@ -1,7 +1,7 @@
-import 'package:revolt/src/models/attachment.dart';
-import 'package:revolt/src/models/role.dart';
-import 'package:revolt/src/models/ulid.dart';
-import 'package:revolt/src/utils/flags_utils.dart';
+import 'package:revolt_bullseye/src/models/attachment.dart';
+import 'package:revolt_bullseye/src/models/role.dart';
+import 'package:revolt_bullseye/src/models/ulid.dart';
+import 'package:revolt_bullseye/src/utils/flags_utils.dart';
 
 /// Server model
 class Server {

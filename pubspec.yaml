@@ -1,10 +1,12 @@
-name: revolt
-description: An idiomatic API wrapper for Revolt.
+name: revolt_bullseye
+description: WIP - An API wrapper that targets the Revolt protocol written in Dart based on https://github.com/arslee07/revolt.dart
 version: 1.0.0
 
 environment:
-  sdk: '>=2.17.5 <3.0.0'
+  sdk: '>=2.19.6 <3.0.0'
 
 dev_dependencies:
-  lints: ^1.0.0
-  test: ^1.20.1
+  lints: ^2.0.1
+  test: ^1.24.1
+dependencies:
+  dotenv: ^4.1.0

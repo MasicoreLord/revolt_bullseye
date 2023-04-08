@@ -1,5 +1,5 @@
-import 'package:revolt/src/models/attachment.dart';
-import 'package:revolt/src/models/ulid.dart';
+import 'package:revolt_bullseye/src/models/attachment.dart';
+import 'package:revolt_bullseye/src/models/ulid.dart';
 
 /// Server member
 class Member {

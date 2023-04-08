@@ -1,4 +1,4 @@
 export 'models.dart';
 export 'api.dart';
 
-export 'src/revolt.dart';
+export 'src/main.dart';

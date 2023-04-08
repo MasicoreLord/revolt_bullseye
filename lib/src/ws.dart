@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:revolt/models.dart';
+import 'package:revolt_bullseye/models.dart';
 
 class RevoltWebsocket {
   WebSocket? _ws;

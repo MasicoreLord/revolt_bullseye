@@ -1,11 +1,14 @@
 import 'dart:math';
 
-import 'package:revolt/revolt.dart';
+import 'package:revolt_bullseye/revolt_bullseye.dart';
+
+import 'package:dotenv/dotenv.dart';
 
 void main() async {
-  final client = Revolt(
+  var env = DotEnv(includePlatformEnvironment: false)..load();
+  final client = RevoltBullseye(
     baseUrl: Uri.parse('https://api.revolt.chat'),
-    botToken: '',
+    botToken: env['TEST_BOT_TOKEN'],
   );
 
   client.ws.onMessage.stream.where((m) => m.content is String)

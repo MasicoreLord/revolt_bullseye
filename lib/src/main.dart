@@ -1,7 +1,7 @@
-import 'package:revolt/api.dart';
+import 'package:revolt_bullseye/api.dart';
 
 /// A wrapper around WS and REST api which takes care on management
-class Revolt {
+class RevoltBullseye {
   /// Base REST API URL
   final Uri baseUrl;
 
@@ -15,7 +15,7 @@ class Revolt {
   final RevoltWebsocket ws;
   final RevoltRest rest;
 
-  Revolt({
+  RevoltBullseye({
     required this.baseUrl,
     this.botToken,
     this.sessionToken,

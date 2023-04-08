@@ -1,8 +1,8 @@
-import 'package:revolt/src/models/attachment.dart';
-import 'package:revolt/src/models/permissions.dart';
-import 'package:revolt/src/models/role.dart';
-import 'package:revolt/src/models/ulid.dart';
-import 'package:revolt/src/utils/enum.dart';
+import 'package:revolt_bullseye/src/models/attachment.dart';
+import 'package:revolt_bullseye/src/models/permissions.dart';
+import 'package:revolt_bullseye/src/models/role.dart';
+import 'package:revolt_bullseye/src/models/ulid.dart';
+import 'package:revolt_bullseye/src/utils/enum.dart';
 
 class ChannelType extends Enum<String> {
   static const savedMessages = ChannelType._create('SavedMessages');

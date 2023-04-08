@@ -1,5 +1,5 @@
-import 'package:revolt/src/models/permissions.dart';
-import 'package:revolt/src/models/ulid.dart';
+import 'package:revolt_bullseye/src/models/permissions.dart';
+import 'package:revolt_bullseye/src/models/ulid.dart';
 
 /// Server role
 class Role {

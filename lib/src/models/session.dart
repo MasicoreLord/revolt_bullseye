@@ -1,4 +1,4 @@
-import 'package:revolt/src/models/ulid.dart';
+import 'package:revolt_bullseye/src/models/ulid.dart';
 
 /// Patial session object
 class PartialSession {

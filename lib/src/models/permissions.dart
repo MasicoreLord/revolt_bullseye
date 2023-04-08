@@ -1,4 +1,4 @@
-import 'package:revolt/src/utils/flags_utils.dart';
+import 'package:revolt_bullseye/src/utils/flags_utils.dart';
 
 class ChannelPermissions {
   final bool viewChannel;

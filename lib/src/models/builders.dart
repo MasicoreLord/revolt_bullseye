@@ -1,8 +1,8 @@
-import 'package:revolt/src/models/ulid.dart';
-import 'package:revolt/src/models/user.dart';
-import 'package:revolt/src/utils/builder.dart';
-import 'package:revolt/src/utils/enum.dart';
-import 'package:revolt/src/utils/flags_utils.dart';
+import 'package:revolt_bullseye/src/models/ulid.dart';
+import 'package:revolt_bullseye/src/models/user.dart';
+import 'package:revolt_bullseye/src/utils/builder.dart';
+import 'package:revolt_bullseye/src/utils/enum.dart';
+import 'package:revolt_bullseye/src/utils/flags_utils.dart';
 
 class CompleteOnboardingPayload extends Builder<Map<String, dynamic>> {
   final String username;
