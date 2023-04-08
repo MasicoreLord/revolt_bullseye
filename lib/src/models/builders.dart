@@ -457,7 +457,7 @@ class ChannelPermissionsBuilder extends Builder<int> {
   bool? sendMessages;
   bool? manageMessages;
   bool? manageChannel;
-  bool? voiceCall;
+  bool? voiceConnect;
   bool? inviteOthers;
   bool? embedLinks;
   bool? uploadFiles;
@@ -472,15 +472,15 @@ class ChannelPermissionsBuilder extends Builder<int> {
   int build() {
     _raw = 0;
 
-    _apply(viewChannel, 1 << 0);
-    _apply(sendMessages, 1 << 1);
-    _apply(manageMessages, 1 << 2);
-    _apply(manageChannel, 1 << 3);
-    _apply(voiceCall, 1 << 4);
-    _apply(inviteOthers, 1 << 5);
-    _apply(embedLinks, 1 << 6);
-    _apply(uploadFiles, 1 << 7);
-    _apply(masquerade, 1 << 8);
+    _apply(viewChannel, 1 << 20);
+    _apply(sendMessages, 1 << 22);
+    _apply(manageMessages, 1 << 23);
+    _apply(manageChannel, 1 << 0);
+    _apply(voiceConnect, 1 << 30);
+    _apply(inviteOthers, 1 << 25);
+    _apply(embedLinks, 1 << 26);
+    _apply(uploadFiles, 1 << 27);
+    _apply(masquerade, 1 << 28);
 
     return _raw;
   }
