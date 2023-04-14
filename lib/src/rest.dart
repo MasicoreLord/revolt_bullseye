@@ -173,7 +173,7 @@ class RevoltRest {
 
   /// Login to an account.
   Future login({
-    required LoginPayload payload,
+    required payload,
   }) async {
     final Map<String, dynamic> data = await fetchRaw(
       'POST',

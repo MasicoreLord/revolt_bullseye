@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 import 'package:revolt_bullseye/revolt_bullseye.dart';
 
@@ -14,8 +13,30 @@ void main() async {
 
   print('Attempting Login...');
   final client = RevoltBullseye(baseUrl: Uri.parse('https://api.revolt.chat'));
-  client.login(payload: LoginPayload(email: '$email',
+  var loginAttempt = await client.login(payload: LoginPayload(
+            email: '$email',
             password: '$password',
             friendlyName: 'Test Session'
             ));
+  if(loginAttempt['result'] == 'MFA') {
+    print('Just one more step to complete login!');
+    print(' ');
+
+    print('Write your MFA Token:');
+    String? mfaToken = stdin.readLineSync();
+
+    print('Attempting Login...');
+    var mfaLoginAttempt = await client.login(payload: MFAPayload(
+      mfaTicket: loginAttempt['ticket'],
+      mfaResponse: {
+        password: mfaToken
+      },
+      friendlyName: 'Test Session (MFA)'
+      ));
+      if(mfaLoginAttempt['result'] == 'Success') {
+        print('Welcome!');
+      }
+  } else if(loginAttempt['result'] == 'Success') {
+    print('Welcome!');
+  }
 }

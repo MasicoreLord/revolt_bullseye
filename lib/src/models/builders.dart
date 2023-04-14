@@ -253,7 +253,7 @@ class MFAPayload extends Builder<Map<String, dynamic>> {
   final String mfaTicket;
 
   /// MFA Response
-  final String? mfaResponse;
+  final Object? mfaResponse;
 
   /// Session friendly name
   final String? friendlyName;
