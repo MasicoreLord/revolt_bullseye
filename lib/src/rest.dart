@@ -172,16 +172,16 @@ class RevoltRest {
   // --- Session ---
 
   /// Login to an account.
-  Future<Session> login({
+  Future login({
     required LoginPayload payload,
   }) async {
-    return Session.fromJson(
-      await fetchRaw(
-        'POST',
-        '/auth/session/login',
-        body: payload.build(),
-      ),
+    final Map<String, dynamic> data = await fetchRaw(
+      'POST',
+      '/auth/session/login',
+      body: payload.build(),
     );
+    if(data['result'] == 'Success') return Session.fromJson(data);
+    return data;
   }
 
   /// Close current session.

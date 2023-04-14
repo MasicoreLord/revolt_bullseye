@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:revolt_bullseye/revolt_bullseye.dart';
 
@@ -12,11 +13,9 @@ void main() async {
   String? password = stdin.readLineSync();
 
   print('Attempting Login...');
-  var rest = RevoltRest(baseUrl: Uri.parse('https://api.revolt.chat'));
-  try {
-    var data = await rest.login(payload: LoginPayload(email: '{$email}', password: '{$password}', friendlyName: 'Test Session'));
-    print(data);
-  } catch (err) {
-    print(err);
-  }
+  final client = RevoltBullseye(baseUrl: Uri.parse('https://api.revolt.chat'));
+  client.login(payload: LoginPayload(email: '$email',
+            password: '$password',
+            friendlyName: 'Test Session'
+            ));
 }

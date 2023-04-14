@@ -246,6 +246,34 @@ class LoginPayload extends Builder<Map<String, dynamic>> {
   }
 }
 
+// TODO: Implement MFA and have it refresh as needed so user can always complete it w/o the user redoing the login
+
+class MFAPayload extends Builder<Map<String, dynamic>> {
+  /// Unvalidated or Authorized MFA ticket
+  final String mfaTicket;
+
+  /// MFA Response
+  final String? mfaResponse;
+
+  /// Session friendly name
+  final String? friendlyName;
+
+  MFAPayload({
+    required this.mfaTicket,
+    this.mfaResponse,
+    this.friendlyName,
+  });
+
+  @override
+  Map<String, dynamic> build() {
+    return {
+      'mfa_ticket': mfaTicket,
+      if (mfaResponse != null) 'mfa_ticket': mfaTicket,
+      if (friendlyName != null) 'friendly_name': friendlyName,
+    };
+  }
+}
+
 /// Edit data
 class EditSessionPayload extends Builder<Map<String, dynamic>> {
   /// Session friendly name

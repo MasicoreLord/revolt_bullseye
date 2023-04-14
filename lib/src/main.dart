@@ -26,6 +26,25 @@ class RevoltBullseye {
           sessionToken: sessionToken,
         );
 
+  Future<void> login({
+    required LoginPayload payload,
+  }) async {
+    final node = await rest.queryNode();
+    final data = await rest.login(payload: payload);
+    if (data['result'] == 'MFA') {
+      print('MFA required, but not implemented!');
+    } else if (data['result'] == 'Disabled') {
+      print('Account is disabled!');
+      throw 'Login Failed (Disabled Account)';
+    } else if (data['result'] == 'Success') {
+      print('Login successful!');
+      print(data);
+    } else {
+      print('Unknown status has occured!');
+      throw 'Login Failed (Unknown Login Status)';
+    }
+  }
+
   Future<void> connect() async {
     if (!ws.isOpen) {
       final node = await rest.queryNode();
