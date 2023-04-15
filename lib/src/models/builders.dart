@@ -268,7 +268,7 @@ class MFAPayload extends Builder<Map<String, dynamic>> {
   Map<String, dynamic> build() {
     return {
       'mfa_ticket': mfaTicket,
-      if (mfaResponse != null) 'mfa_ticket': mfaTicket,
+      if (mfaResponse != null) 'mfa_response': mfaResponse,
       if (friendlyName != null) 'friendly_name': friendlyName,
     };
   }

@@ -27,9 +27,9 @@ void main() async {
 
     print('Attempting Login...');
     var mfaLoginAttempt = await client.login(payload: MFAPayload(
-      mfaTicket: loginAttempt['ticket'],
+      mfaTicket: '${loginAttempt['ticket']}',
       mfaResponse: {
-        password: mfaToken
+        'totp_code': '$mfaToken' // was supposed to be password according to docs, but totp_code which the official client(s) use is the only one accepted
       },
       friendlyName: 'Test Session (MFA)'
       ));

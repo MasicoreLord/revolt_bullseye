@@ -47,6 +47,7 @@ class RevoltRest {
     c.close();
 
     if (!(res.statusCode >= 200 && res.statusCode <= 299)) {
+      print(res);
       throw res.statusCode;
     }
 
