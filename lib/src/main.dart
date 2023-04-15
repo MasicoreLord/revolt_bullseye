@@ -42,6 +42,7 @@ class RevoltBullseye {
     } else if (data['result'] == 'Success') {
       print('Login successful!');
       print(data);
+      return Session.fromJson(data);
     } else {
       print('Unknown status has occured!');
       print(data);

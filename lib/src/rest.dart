@@ -181,7 +181,6 @@ class RevoltRest {
       '/auth/session/login',
       body: payload.build(),
     );
-    if(data['result'] == 'Success') return Session.fromJson(data);
     return data;
   }
 
