@@ -246,8 +246,6 @@ class LoginPayload extends Builder<Map<String, dynamic>> {
   }
 }
 
-// TODO: Implement MFA and have it refresh as needed so user can always complete it w/o the user redoing the login
-
 class MFAPayload extends Builder<Map<String, dynamic>> {
   /// Unvalidated or Authorized MFA ticket
   final String mfaTicket;

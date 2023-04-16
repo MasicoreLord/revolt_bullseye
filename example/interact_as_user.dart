@@ -18,9 +18,10 @@ void main() async {
             password: '$password',
             friendlyName: 'Test Session'
             ));
+  void newSession (token) => {
+    RevoltBullseye(baseUrl: Uri.parse('https://api.revolt.chat'), sessionToken: token).connect()
+  };
   if(loginAttempt['result'] == 'MFA') {
-    print('Just one more step to complete login!');
-    print(' ');
     print("Choose MFA Option (Avaliable Methods: '${loginAttempt['allowed_methods']}'):");
     String? mfaOption = stdin.readLineSync();
 
@@ -51,14 +52,16 @@ void main() async {
     var mfaLoginAttempt = await client.login(payload: MFAPayload(
       mfaTicket: '${loginAttempt['ticket']}',
       mfaResponse: {
-        responseField: mfaResponse // was supposed to be password according to docs, but totp_code which the official client(s) use is the only one accepted
+        responseField: mfaResponse
       },
       friendlyName: 'Test Session (MFA)'
       ));
       if(mfaLoginAttempt['result'] == 'Success') {
+        newSession(mfaLoginAttempt['token']);
         print('Welcome!');
       }
   } else if(loginAttempt['result'] == 'Success') {
+    newSession(loginAttempt['token']);
     print('Welcome!');
   }
 }

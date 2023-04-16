@@ -41,8 +41,7 @@ class RevoltBullseye {
       throw 'Login Failed (Disabled Account)';
     } else if (data['result'] == 'Success') {
       print('Login successful!');
-      print(data);
-      return Session.fromJson(data);
+      return data;
     } else {
       print('Unknown status has occured!');
       print(data);
