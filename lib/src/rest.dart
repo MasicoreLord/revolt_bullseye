@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:async';
 
 import 'package:revolt_bullseye/models.dart';
 
@@ -18,8 +19,34 @@ class RevoltRest {
     Map<String, dynamic> body = const {},
     Map<String, String> query = const {},
   }) async {
+    Map<String, Object> buckets = {};
+
     final c = HttpClient();
-    final req = await c.openUrl(
+    Future<HttpClientRequest> throttledRequest(method, url) async {
+      var req = await c.openUrl(method, url);
+      print('''
+        method: $method,
+        url: $url
+      ''');
+
+      Function? addBucket(value) {
+        buckets['${value.headers['x-ratelimit-bucket']?[0]}'] = {
+          'limit': value.headers['x-ratelimit-limit']?[0],
+          'remaining': value.headers['x-ratelimit-remaining']?[0],
+          'reset-after': value.headers['x-ratelimit-reset-after']?[0]
+        };
+        return null;
+      }
+
+      req.done
+        .then((value) {
+          addBucket(value);
+        });
+
+      return req;
+    }
+    
+    final req = await throttledRequest(
       method,
       Uri(
         scheme: baseUrl.scheme,
