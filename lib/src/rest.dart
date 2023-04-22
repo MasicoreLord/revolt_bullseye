@@ -19,18 +19,53 @@ class RevoltRest {
     Map<String, dynamic> body = const {},
     Map<String, String> query = const {},
   }) async {
-    Map<String, Object> buckets = {};
+    final buckets = {
+      '/users': {},
+      '/bots': {},
+      '/channels': {},
+      '/channels/:id/messages <POST>': {},
+      '/servers': {},
+      '/auth': {},
+      '/auth <DELETE>': {},
+      '/swagger': {},
+      'default': {}
+    };
+    final queues = {};
 
     final c = HttpClient();
     Future<HttpClientRequest> throttledRequest(method, url) async {
       var req = await c.openUrl(method, url);
+      var hasReachedRateLimit = true;
       print('''
         method: $method,
         url: $url
       ''');
 
-      Function? addBucket(value) {
-        buckets['${value.headers['x-ratelimit-bucket']?[0]}'] = {
+      Function? updateBucket(value) {
+        String path = value.url.path;
+        String bucketName = '';
+        if (path.startsWith('/users')) {
+          bucketName = '/users';
+        } else if (path.startsWith('/bots')) {
+          bucketName = '/bots';
+        } else if (path.startsWith('/channels') && method != 'POST') {
+          bucketName = '/channels';
+        } else if (path.startsWith('/channels') && path.endsWith('/messages') && method == 'POST') {
+          bucketName = '/channels/:id/messages <POST>';
+        } else if (path.startsWith('/servers')) {
+          bucketName = '/servers';
+        } else if (path.startsWith('/auth') && method != 'DELETE') {
+          bucketName = '/auth';
+        } else if (path.startsWith('/auth') && method == 'DELETE') {
+          bucketName = '/auth <DELETE>';
+        } else if (path.startsWith('/swagger')) {
+          bucketName = '/swagger';
+        } else {
+          bucketName = 'default';
+        }
+
+        buckets[bucketName] = {
+          'id': value.headers['x-ratelimit-bucket']?[0],
           'limit': value.headers['x-ratelimit-limit']?[0],
           'remaining': value.headers['x-ratelimit-remaining']?[0],
           'reset-after': value.headers['x-ratelimit-reset-after']?[0]
@@ -38,12 +73,43 @@ class RevoltRest {
         return null;
       }
 
-      req.done
-        .then((value) {
-          addBucket(value);
-        });
+      Function? addToQueue(value) {
+        var queueId = value.headers['x-ratelimit-bucket']?[0];
+        if(!queues.containsKey('$queueId')) {
+          queues['$queueId'] = {
+            '$url': {
+              'method': '$method'
+            }
+          };
+        }
+        return null;
+      }
 
-      return req;
+      /* Future<bool> checkRateLimited(value) async {
+        var bucket = value.headers['x-ratelimit-bucket']?[0];
+        if(!buckets.containsKey('$bucket')) {
+          updateBucket(value);
+          return false;
+        } else {
+          return buckets['$bucket']['remaining'] != 0;
+        }
+      } */
+
+      /* Future<HttpClientRequest> waitForRequest(method, url) async {
+        
+      } */
+
+      /* req.done
+        .then((value) async {
+          hasReachedRateLimit = await checkRateLimited(value);
+        }); */
+
+      //if(hasReachedRateLimit) {
+        return req;
+      /* } else {
+        print('Rate limit approached, temporarily queuing further requests!');
+        return await waitForRequest(method, url);
+      } */
     }
     
     final req = await throttledRequest(
