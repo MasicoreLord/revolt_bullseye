@@ -9,6 +9,96 @@ class RevoltRest {
   final String? sessionToken;
   final Uri baseUrl;
 
+  // -1 used as placeholder and also represents indefinite
+  final Map<String, Map> buckets = {
+    '/users': {
+      'limit': -1,
+      'remaining': -1,
+      'reset-after': -1
+    },
+    '/bots': {
+      'limit': -1,
+      'remaining': -1,
+      'reset-after': -1
+    },
+    '/channels': {
+      'limit': -1,
+      'remaining': -1,
+      'reset-after': -1
+    },
+    '/channels/:id/messages <POST>': {
+      'limit': -1,
+      'remaining': -1,
+      'reset-after': -1
+    },
+    '/servers': {
+      'limit': -1,
+      'remaining': -1,
+      'reset-after': -1
+    },
+    '/auth': {
+      'limit': -1,
+      'remaining': -1,
+      'reset-after': -1
+    },
+    '/auth <DELETE>': {
+      'limit': -1,
+      'remaining': -1,
+      'reset-after': -1
+    },
+    '/swagger': {
+      'limit': -1,
+      'remaining': -1,
+      'reset-after': -1
+    },
+    'default': {
+      'limit': -1,
+      'remaining': -1,
+      'reset-after': -1
+    }
+  };
+  final Map<String, List> queues = {
+    '/users': [],
+    '/bots': [],
+    '/channels': [],
+    '/channels/:id/messages <POST>': [],
+    '/servers': [],
+    '/auth': [],
+    '/auth <DELETE>': [],
+    '/swagger': [],
+    'global': [],
+    'default': []
+  };
+  bool rateLimited(method, url) {
+    var path = url.path;
+    String bucketName = '';
+
+    if (path.startsWith('/users')) {
+      bucketName = '/users';
+    } else if (path.startsWith('/bots')) {
+      bucketName = '/bots';
+    } else if (path.startsWith('/channels') && method != 'POST') {
+      bucketName = '/channels';
+    } else if (path.startsWith('/channels') && path.endsWith('/messages') && method == 'POST') {
+      bucketName = '/channels/:id/messages <POST>';
+    } else if (path.startsWith('/servers')) {
+      bucketName = '/servers';
+    } else if (path.startsWith('/auth') && method != 'DELETE') {
+      bucketName = '/auth';
+    } else if (path.startsWith('/auth') && method == 'DELETE') {
+      bucketName = '/auth <DELETE>';
+    } else if (path.startsWith('/swagger')) {
+      bucketName = '/swagger';
+    } else {
+      bucketName = 'default';
+    }
+
+    var remaining = buckets[bucketName]!['remaining'];
+
+    return !(remaining == -1 || remaining > 0);
+  }
+
+
   RevoltRest({required this.baseUrl, this.botToken, this.sessionToken});
 
   /// Fetch raw JSON content.
@@ -19,27 +109,9 @@ class RevoltRest {
     Map<String, dynamic> body = const {},
     Map<String, String> query = const {},
   }) async {
-    final buckets = {
-      '/users': {},
-      '/bots': {},
-      '/channels': {},
-      '/channels/:id/messages <POST>': {},
-      '/servers': {},
-      '/auth': {},
-      '/auth <DELETE>': {},
-      '/swagger': {},
-      'default': {}
-    };
-    final queues = {};
 
     final c = HttpClient();
     Future<HttpClientRequest> throttledRequest(method, url) async {
-      var req = await c.openUrl(method, url);
-      var hasReachedRateLimit = true;
-      print('''
-        method: $method,
-        url: $url
-      ''');
 
       Function? updateBucket(value) {
         String path = value.url.path;
@@ -65,7 +137,6 @@ class RevoltRest {
         }
 
         buckets[bucketName] = {
-          'id': value.headers['x-ratelimit-bucket']?[0],
           'limit': value.headers['x-ratelimit-limit']?[0],
           'remaining': value.headers['x-ratelimit-remaining']?[0],
           'reset-after': value.headers['x-ratelimit-reset-after']?[0]
@@ -73,43 +144,38 @@ class RevoltRest {
         return null;
       }
 
-      Function? addToQueue(value) {
-        var queueId = value.headers['x-ratelimit-bucket']?[0];
-        if(!queues.containsKey('$queueId')) {
-          queues['$queueId'] = {
-            '$url': {
-              'method': '$method'
-            }
-          };
+      Function? addToQueue(method, url) {
+        String path = url.path;
+        String queueName = '';
+        if (path.startsWith('/users')) {
+          queueName = '/users';
+        } else if (path.startsWith('/bots')) {
+          queueName = '/bots';
+        } else if (path.startsWith('/channels') && method != 'POST') {
+          queueName = '/channels';
+        } else if (path.startsWith('/channels') && path.endsWith('/messages') && method == 'POST') {
+          queueName = '/channels/:id/messages <POST>';
+        } else if (path.startsWith('/servers')) {
+          queueName = '/servers';
+        } else if (path.startsWith('/auth') && method != 'DELETE') {
+          queueName = '/auth';
+        } else if (path.startsWith('/auth') && method == 'DELETE') {
+          queueName = '/auth <DELETE>';
+        } else if (path.startsWith('/swagger')) {
+          queueName = '/swagger';
+        } else {
+          queueName = 'default';
         }
+
+        queues[queueName]!.add({'$method': '$url'});
         return null;
       }
 
-      /* Future<bool> checkRateLimited(value) async {
-        var bucket = value.headers['x-ratelimit-bucket']?[0];
-        if(!buckets.containsKey('$bucket')) {
-          updateBucket(value);
-          return false;
-        } else {
-          return buckets['$bucket']['remaining'] != 0;
-        }
-      } */
+      if(!rateLimited(method, url)) {
+        return await c.openUrl(method, url);
+      }
 
-      /* Future<HttpClientRequest> waitForRequest(method, url) async {
-        
-      } */
-
-      /* req.done
-        .then((value) async {
-          hasReachedRateLimit = await checkRateLimited(value);
-        }); */
-
-      //if(hasReachedRateLimit) {
-        return req;
-      /* } else {
-        print('Rate limit approached, temporarily queuing further requests!');
-        return await waitForRequest(method, url);
-      } */
+      addToQueue(method, url);
     }
     
     final req = await throttledRequest(
