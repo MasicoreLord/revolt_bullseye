@@ -183,7 +183,14 @@ class RevoltRest {
     c.close();
 
     if (res.statusCode == 429) {
+      var jsonData = json.decode(data);
+      var timeout = jsonData['retry_after'];
 
+      print('\x1B[31mToo many requests for: $path using $method\x1B[0m');
+      
+      return Future.delayed(Duration(milliseconds: timeout), () async {
+        return await fetchRaw(method, path);
+      });
     } else if (!(res.statusCode >= 200 && res.statusCode <= 299)) {
       throw res.statusCode;
     }
