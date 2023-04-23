@@ -10,4 +10,4 @@ dev_dependencies:
   test: ^1.24.1
 dependencies:
   dotenv: ^4.1.0
-  http: ^0.13.5
+  executor: ^2.2.3

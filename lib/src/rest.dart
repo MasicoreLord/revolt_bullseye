@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:async';
+import 'package:executor/executor.dart';
 
 import 'package:revolt_bullseye/models.dart';
-import 'package:http/http.dart' as http;
 
 class RevoltRest {
   final String? botToken;
@@ -70,8 +70,7 @@ class RevoltRest {
     'global': [],
     'default': []
   }; */
-  String getBucketName(String method, Uri url) {
-    var path = url.path;
+  String getBucketName(String method, String path) {
     String result = '';
 
     if (path.startsWith('/users')) {
@@ -96,8 +95,8 @@ class RevoltRest {
 
     return result;
   }
-  bool rateLimited(String method, Uri url) {
-    String bucketName = getBucketName(method, url);
+  bool rateLimited(String method, String path) {
+    String bucketName = getBucketName(method, path);
 
     var remaining = buckets[bucketName]!['remaining'];
 
@@ -111,7 +110,7 @@ class RevoltRest {
 
   /// Fetch raw JSON content.
   /// Can return [null], [List<dynamic>] or [Map<String, dynamic>]
-  Future<dynamic> fetchRaw(
+  Future<dynamic> fetchRawInternal(
     String method,
     String path, {
     Map<String, dynamic> body = const {},
@@ -119,43 +118,18 @@ class RevoltRest {
   }) async {
 
     final c = HttpClient();
-    Future<HttpClientRequest> throttledRequest(String method, Uri url) async {
-      String bucketName = getBucketName(method, url);
+    String bucketName = getBucketName(method, path);
 
-      Function? updateBucket(value) {
-        buckets[bucketName] = {
-          'limit': int.parse(value.headers['x-ratelimit-limit']?[0]),
-          'remaining': int.parse(value.headers['x-ratelimit-remaining']?[0]),
-          'reset-after': int.parse(value.headers['x-ratelimit-reset-after']?[0])
-        };
-        return null;
-      }
-
-      /* Function? addToQueue(method, url) {
-        String bucketName = getBucketName(method, url);
-
-        queues[bucketName]!.add({'$method': '$url'});
-        return null;
-      } */
-
-      if(!rateLimited(method, url)) {
-        final doRequest = await c.openUrl(method, url);
-        doRequest.done.then((value) {
-          updateBucket(value);
-        });
-        return doRequest;
-      } else {
-        return await Future<HttpClientRequest>.delayed(Duration(milliseconds: buckets[bucketName]!['remaining']), () async {
-          final doRequest = await c.openUrl(method, url);
-          doRequest.done.then((value) {
-            updateBucket(value);
-          });
-          return doRequest;
-        });
-      }
+    Function? updateBucket(response) {
+      buckets[bucketName] = {
+        'limit': int.parse(response.headers['x-ratelimit-limit']?[0]),
+        'remaining': int.parse(response.headers['x-ratelimit-remaining']?[0]),
+        'reset-after': int.parse(response.headers['x-ratelimit-reset-after']?[0])
+      };
+      return null;
     }
     
-    final req = await throttledRequest(
+    final req = await c.openUrl(
       method,
       Uri(
         scheme: baseUrl.scheme,
@@ -182,20 +156,34 @@ class RevoltRest {
     final data = await utf8.decodeStream(res);
     c.close();
 
-    if (res.statusCode == 429) {
-      var jsonData = json.decode(data);
-      var timeout = jsonData['retry_after'];
+    updateBucket(res);
 
-      print('\x1B[31mToo many requests for: $path using $method\x1B[0m');
-      
-      return Future.delayed(Duration(milliseconds: timeout), () async {
-        return await fetchRaw(method, path);
-      });
-    } else if (!(res.statusCode >= 200 && res.statusCode <= 299)) {
+    print('request: $method $path');
+    print('''
+      "bucket": {
+        "name": $bucketName,
+        "limit": ${buckets[bucketName]!['limit']},
+        "ramaining": ${buckets[bucketName]!['remaining']},
+        "reset-after": ${buckets[bucketName]!['reset-after']}
+      }
+    ''');
+
+    if (!(res.statusCode >= 200 && res.statusCode <= 299)) {
       throw res.statusCode;
     }
 
     if (data.isNotEmpty) return json.decode(data);
+  }
+
+  Future<dynamic> fetchRaw(
+    String method,
+    String path, {
+    Map<String, dynamic> body = const {},
+    Map<String, String> query = const {},
+  }) async {
+
+    
+    return await fetchRawInternal(method, path, body: body, query: query);
   }
 
   // --- Core ---
