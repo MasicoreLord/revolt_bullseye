@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:async';
 
 import 'package:revolt_bullseye/models.dart';
+import 'package:http/http.dart' as http;
 
 class RevoltRest {
   final String? botToken;
@@ -57,7 +58,7 @@ class RevoltRest {
       'reset-after': -1
     }
   };
-  final Map<String, List> queues = {
+  /* final Map<String, List> queues = {
     '/users': [],
     '/bots': [],
     '/channels': [],
@@ -68,32 +69,39 @@ class RevoltRest {
     '/swagger': [],
     'global': [],
     'default': []
-  };
-  bool rateLimited(method, url) {
+  }; */
+  String getBucketName(String method, Uri url) {
     var path = url.path;
-    String bucketName = '';
+    String result = '';
 
     if (path.startsWith('/users')) {
-      bucketName = '/users';
+      result = '/users';
     } else if (path.startsWith('/bots')) {
-      bucketName = '/bots';
+      result = '/bots';
     } else if (path.startsWith('/channels') && method != 'POST') {
-      bucketName = '/channels';
+      result = '/channels';
     } else if (path.startsWith('/channels') && path.endsWith('/messages') && method == 'POST') {
-      bucketName = '/channels/:id/messages <POST>';
+      result = '/channels/:id/messages <POST>';
     } else if (path.startsWith('/servers')) {
-      bucketName = '/servers';
+      result = '/servers';
     } else if (path.startsWith('/auth') && method != 'DELETE') {
-      bucketName = '/auth';
+      result = '/auth';
     } else if (path.startsWith('/auth') && method == 'DELETE') {
-      bucketName = '/auth <DELETE>';
+      result = '/auth <DELETE>';
     } else if (path.startsWith('/swagger')) {
-      bucketName = '/swagger';
+      result = '/swagger';
     } else {
-      bucketName = 'default';
+      result = 'default';
     }
 
+    return result;
+  }
+  bool rateLimited(String method, Uri url) {
+    String bucketName = getBucketName(method, url);
+
     var remaining = buckets[bucketName]!['remaining'];
+
+    print('limit remaining: $remaining');
 
     return !(remaining == -1 || remaining > 0);
   }
@@ -111,71 +119,40 @@ class RevoltRest {
   }) async {
 
     final c = HttpClient();
-    Future<HttpClientRequest> throttledRequest(method, url) async {
+    Future<HttpClientRequest> throttledRequest(String method, Uri url) async {
+      String bucketName = getBucketName(method, url);
 
       Function? updateBucket(value) {
-        String path = value.url.path;
-        String bucketName = '';
-        if (path.startsWith('/users')) {
-          bucketName = '/users';
-        } else if (path.startsWith('/bots')) {
-          bucketName = '/bots';
-        } else if (path.startsWith('/channels') && method != 'POST') {
-          bucketName = '/channels';
-        } else if (path.startsWith('/channels') && path.endsWith('/messages') && method == 'POST') {
-          bucketName = '/channels/:id/messages <POST>';
-        } else if (path.startsWith('/servers')) {
-          bucketName = '/servers';
-        } else if (path.startsWith('/auth') && method != 'DELETE') {
-          bucketName = '/auth';
-        } else if (path.startsWith('/auth') && method == 'DELETE') {
-          bucketName = '/auth <DELETE>';
-        } else if (path.startsWith('/swagger')) {
-          bucketName = '/swagger';
-        } else {
-          bucketName = 'default';
-        }
-
         buckets[bucketName] = {
-          'limit': value.headers['x-ratelimit-limit']?[0],
-          'remaining': value.headers['x-ratelimit-remaining']?[0],
-          'reset-after': value.headers['x-ratelimit-reset-after']?[0]
+          'limit': int.parse(value.headers['x-ratelimit-limit']?[0]),
+          'remaining': int.parse(value.headers['x-ratelimit-remaining']?[0]),
+          'reset-after': int.parse(value.headers['x-ratelimit-reset-after']?[0])
         };
         return null;
       }
 
-      Function? addToQueue(method, url) {
-        String path = url.path;
-        String queueName = '';
-        if (path.startsWith('/users')) {
-          queueName = '/users';
-        } else if (path.startsWith('/bots')) {
-          queueName = '/bots';
-        } else if (path.startsWith('/channels') && method != 'POST') {
-          queueName = '/channels';
-        } else if (path.startsWith('/channels') && path.endsWith('/messages') && method == 'POST') {
-          queueName = '/channels/:id/messages <POST>';
-        } else if (path.startsWith('/servers')) {
-          queueName = '/servers';
-        } else if (path.startsWith('/auth') && method != 'DELETE') {
-          queueName = '/auth';
-        } else if (path.startsWith('/auth') && method == 'DELETE') {
-          queueName = '/auth <DELETE>';
-        } else if (path.startsWith('/swagger')) {
-          queueName = '/swagger';
-        } else {
-          queueName = 'default';
-        }
+      /* Function? addToQueue(method, url) {
+        String bucketName = getBucketName(method, url);
 
-        queues[queueName]!.add({'$method': '$url'});
+        queues[bucketName]!.add({'$method': '$url'});
         return null;
-      }
+      } */
 
       if(!rateLimited(method, url)) {
-        return await c.openUrl(method, url);
+        final doRequest = await c.openUrl(method, url);
+        doRequest.done.then((value) {
+          updateBucket(value);
+        });
+        return doRequest;
+      } else {
+        return await Future<HttpClientRequest>.delayed(Duration(milliseconds: buckets[bucketName]!['remaining']), () async {
+          final doRequest = await c.openUrl(method, url);
+          doRequest.done.then((value) {
+            updateBucket(value);
+          });
+          return doRequest;
+        });
       }
-
-      addToQueue(method, url);
     }
     
     final req = await throttledRequest(
@@ -205,8 +182,9 @@ class RevoltRest {
     final data = await utf8.decodeStream(res);
     c.close();
 
-    if (!(res.statusCode >= 200 && res.statusCode <= 299)) {
-      print(res);
+    if (res.statusCode == 429) {
+
+    } else if (!(res.statusCode >= 200 && res.statusCode <= 299)) {
       throw res.statusCode;
     }
 
