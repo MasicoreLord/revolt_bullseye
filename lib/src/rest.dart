@@ -58,20 +58,19 @@ class RevoltRest {
       'reset-after': -1
     }
   };
-  /* final Map<String, List> queues = {
-    '/users': [],
-    '/bots': [],
-    '/channels': [],
-    '/channels/:id/messages <POST>': [],
-    '/servers': [],
-    '/auth': [],
-    '/auth <DELETE>': [],
-    '/swagger': [],
-    'global': [],
-    'default': []
-  }; */
+  final Map<String, Executor> executors = {
+    '/users': Executor(concurrency: 10),
+    '/body': Executor(concurrency: 10),
+    '/channels': Executor(concurrency: 10),
+    '/channels/:id/messages <POST>': Executor(concurrency: 10),
+    '/servers': Executor(concurrency: 10),
+    '/auth': Executor(concurrency: 10),
+    '/auth <DELETE>': Executor(concurrency: 10),
+    '/swagger': Executor(concurrency: 10),
+    '/default': Executor(concurrency: 10)
+  };
   String getBucketName(String method, String path) {
-    String result = '';
+    String result = 'default';
 
     if (path.startsWith('/users')) {
       result = '/users';
@@ -116,16 +115,33 @@ class RevoltRest {
     Map<String, dynamic> body = const {},
     Map<String, String> query = const {},
   }) async {
-
     final c = HttpClient();
     String bucketName = getBucketName(method, path);
 
-    Function? updateBucket(response) {
+    Future? updateBucket(response) async{
+      int existingLimit = buckets[bucketName]!['limit'];
+      int limit = int.parse(response.headers['x-ratelimit-limit']?[0]);
+      int remaining = int.parse(response.headers['x-ratelimit-remaining']?[0]);
+      int resetAfter = int.parse(response.headers['x-ratelimit-reset-after']?[0]);
+      
       buckets[bucketName] = {
-        'limit': int.parse(response.headers['x-ratelimit-limit']?[0]),
-        'remaining': int.parse(response.headers['x-ratelimit-remaining']?[0]),
-        'reset-after': int.parse(response.headers['x-ratelimit-reset-after']?[0])
+        'limit': limit,
+        'remaining': remaining,
+        'reset-after': resetAfter
       };
+
+      Future? updateQueue() async {
+        await executors[bucketName]?.join(withWaiting: true);
+        await executors[bucketName]?.close();
+        executors[bucketName] = Executor(concurrency: 10, rate: Rate(limit ~/ 10, Duration(milliseconds: resetAfter)));
+      }
+
+
+      if(existingLimit == -1) {
+        await updateQueue();
+      } else if(limit != existingLimit) {
+        await updateQueue();
+      }
       return null;
     }
     
@@ -169,7 +185,11 @@ class RevoltRest {
     ''');
 
     if (!(res.statusCode >= 200 && res.statusCode <= 299)) {
-      throw res.statusCode;
+      Map<String, dynamic> error = {
+        'status': res.statusCode,
+        'info': json.decode(data)
+      };
+      throw error;
     }
 
     if (data.isNotEmpty) return json.decode(data);
@@ -181,9 +201,30 @@ class RevoltRest {
     Map<String, dynamic> body = const {},
     Map<String, String> query = const {},
   }) async {
+    String bucketName = getBucketName(method, path);
 
-    
-    return await fetchRawInternal(method, path, body: body, query: query);
+    if(rateLimited(method, path)) {
+      int timeout = buckets[bucketName]!['reset-after'];
+      return Future.delayed(Duration(milliseconds: timeout), () async {
+        return await executors[bucketName]?.scheduleTask(() async {
+          await fetchRaw(method, path, body: body, query: query);
+        });
+      });
+    } else {
+      try {
+        return await fetchRawInternal(method, path, body: body, query: query);
+      } catch(e) {
+        var error = e as Map<String, dynamic>;
+        if(error['status'] == 429) {
+          int timeout = error['info']['retry_after'];
+          return Future.delayed(Duration(milliseconds: timeout), () async {
+            return await executors[bucketName]?.scheduleTask(() async {
+              await fetchRaw(method, path, body: body, query: query);
+            });
+          });
+        }
+      }
+    }
   }
 
   // --- Core ---
