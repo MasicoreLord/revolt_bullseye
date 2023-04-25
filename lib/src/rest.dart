@@ -37,6 +37,11 @@ class RevoltRest {
       'remaining': -1,
       'reset-after': -1
     },
+    '/users/:id/default_avatar': {
+      'limit': -1,
+      'remaining': -1,
+      'reset-after': -1
+    },
     '/auth': {
       'limit': -1,
       'remaining': -1,
@@ -48,6 +53,16 @@ class RevoltRest {
       'reset-after': -1
     },
     '/swagger': {
+      'limit': -1,
+      'remaining': -1,
+      'reset-after': -1
+    },
+    '/safety/report': {
+      'limit': -1,
+      'remaining': -1,
+      'reset-after': -1
+    },
+    '/safety': {
       'limit': -1,
       'remaining': -1,
       'reset-after': -1
@@ -64,9 +79,12 @@ class RevoltRest {
     '/channels': Executor(concurrency: 10),
     '/channels/:id/messages <POST>': Executor(concurrency: 10),
     '/servers': Executor(concurrency: 10),
+    '/users/:id/default_avatar': Executor(concurrency: 10),
     '/auth': Executor(concurrency: 10),
     '/auth <DELETE>': Executor(concurrency: 10),
     '/swagger': Executor(concurrency: 10),
+    '/safety/report': Executor(concurrency: 10),
+    '/safety': Executor(concurrency: 10),
     'default': Executor(concurrency: 10)
   };
   String getBucketName(String method, String path) {
@@ -82,12 +100,18 @@ class RevoltRest {
       result = '/channels/:id/messages <POST>';
     } else if (path.startsWith('/servers')) {
       result = '/servers';
+    } else if (path.startsWith('/users') && path.endsWith('/default_avatar')) {
+      result = '/users/:id/default_avatar';
     } else if (path.startsWith('/auth') && method != 'DELETE') {
       result = '/auth';
     } else if (path.startsWith('/auth') && method == 'DELETE') {
       result = '/auth <DELETE>';
     } else if (path.startsWith('/swagger')) {
       result = '/swagger';
+    } else if (path.startsWith('/safety/report')) {
+      result = '/safety/report';
+    } else if (path.startsWith('/safety')) {
+      result = '/safety';
     } else {
       result = 'default';
     }
