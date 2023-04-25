@@ -67,7 +67,7 @@ class RevoltRest {
     '/auth': Executor(concurrency: 10),
     '/auth <DELETE>': Executor(concurrency: 10),
     '/swagger': Executor(concurrency: 10),
-    '/default': Executor(concurrency: 10)
+    'default': Executor(concurrency: 10)
   };
   String getBucketName(String method, String path) {
     String result = 'default';
@@ -96,10 +96,7 @@ class RevoltRest {
   }
   bool rateLimited(String method, String path) {
     String bucketName = getBucketName(method, path);
-
     var remaining = buckets[bucketName]!['remaining'];
-
-    print('limit remaining: $remaining');
 
     return !(remaining == -1 || remaining > 0);
   }
@@ -174,16 +171,6 @@ class RevoltRest {
 
     updateBucket(res);
 
-    print('request: $method $path');
-    print('''
-      "bucket": {
-        "name": $bucketName,
-        "limit": ${buckets[bucketName]!['limit']},
-        "ramaining": ${buckets[bucketName]!['remaining']},
-        "reset-after": ${buckets[bucketName]!['reset-after']}
-      }
-    ''');
-
     if (!(res.statusCode >= 200 && res.statusCode <= 299)) {
       Map<String, dynamic> error = {
         'status': res.statusCode,
@@ -202,14 +189,19 @@ class RevoltRest {
     Map<String, String> query = const {},
   }) async {
     String bucketName = getBucketName(method, path);
+    Future queueFetch(timeout) async {
+      if (timeout == -1) timeout = 0; // ensures timeout isn't using the placeholder
+      return await Future.delayed(Duration(milliseconds: timeout), () async {
+        return await executors[bucketName]?.scheduleTask(() async {
+          // TODO: Did return here so it doesn't immediately crash (does this actually delay the tasks?)
+          return await fetchRawInternal(method, path, body: body, query: query);
+        });
+      });
+    }
 
     if(rateLimited(method, path)) {
       int timeout = buckets[bucketName]!['reset-after'];
-      return Future.delayed(Duration(milliseconds: timeout), () async {
-        return await executors[bucketName]?.scheduleTask(() async {
-          await fetchRaw(method, path, body: body, query: query);
-        });
-      });
+      return await queueFetch(timeout);
     } else {
       try {
         return await fetchRawInternal(method, path, body: body, query: query);
@@ -217,11 +209,7 @@ class RevoltRest {
         var error = e as Map<String, dynamic>;
         if(error['status'] == 429) {
           int timeout = error['info']['retry_after'];
-          return Future.delayed(Duration(milliseconds: timeout), () async {
-            return await executors[bucketName]?.scheduleTask(() async {
-              await fetchRaw(method, path, body: body, query: query);
-            });
-          });
+          return await queueFetch(timeout);
         }
       }
     }
