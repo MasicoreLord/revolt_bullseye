@@ -745,7 +745,7 @@ class RevoltRest {
   }
 
   /// Acknowledges Message/Marks as Read
-  Future<void> acknowledgeMessage({
+  Future<void> markMessageAsRead({
     required Ulid channelId,
     required Ulid messageId,
   }) async {
@@ -874,7 +874,31 @@ class RevoltRest {
     );
   }
 
-  // TODO: Add Create Server, Delete/Leave Server, Edit Server, Mark Server As Read, and Create Channel
+  /// Delete/Leave Server
+  Future<void> deleteOrLeaveServer({
+    required Ulid serverId,
+    bool silent = false
+  }) async {
+    await fetchRaw(
+      'DELETE',
+      '/servers/$serverId',
+      query: {
+        'leave_silently': silent.toString()
+      }
+    );
+  }
+
+  /// Mark Server as Read
+  Future<void> markServerAsRead({
+    required Ulid serverId
+  }) async {
+    await fetchRaw(
+      'PUT',
+      '/servers/$serverId/ack'
+    );
+  }
+
+  // TODO: Add Create Server, Edit Server, and Create Channel
 
   // --- Server Members ---
 
