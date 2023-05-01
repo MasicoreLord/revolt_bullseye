@@ -44,6 +44,26 @@ class MessagePayload extends Builder<Map<String, dynamic>> {
   }
 }
 
+class EditMessagePayload extends Builder<Map<String, dynamic>> {
+  final String? content;
+  final List<EmbedPayload>? embeds;
+
+  EditMessagePayload({
+    this.content,
+    this.embeds,
+  });
+
+  @override
+  Map<String, dynamic> build() {
+    return {
+      if (content != null && content!.isNotEmpty) 'content': content.toString(),
+      'nonce': Ulid.fromNow().toString(),
+      if (embeds != null && embeds!.isNotEmpty)
+        'embeds': embeds!.map((e) => e.build()).toList(),
+    };
+  }
+}
+
 class MessageReplyPayload extends Builder<Map<String, dynamic>> {
   final Ulid messageId;
   final bool mention;
@@ -524,12 +544,13 @@ class ChannelPermissionsPayload extends Builder<Map<String, dynamic>> {
 }
 
 /// Message sort direction
-class MessageSortDirection extends Enum<String> {
-  static const latest = MessageSortDirection._create('Latest');
-  static const oldest = MessageSortDirection._create('Oldest');
+class MessageSort extends Enum<String> {
+  static const relevance = MessageSort._create('Relevance');
+  static const latest = MessageSort._create('Latest');
+  static const oldest = MessageSort._create('Oldest');
 
-  MessageSortDirection.from(String value) : super(value);
-  const MessageSortDirection._create(String value) : super(value);
+  MessageSort.from(String value) : super(value);
+  const MessageSort._create(String value) : super(value);
 }
 
 /// Messages fetch options
@@ -544,8 +565,8 @@ class FetchMessagesPayload extends Builder<Map<String, dynamic>> {
   /// Message ID after which messages should be fetched
   final Ulid? after;
 
-  /// Message sort direction
-  final MessageSortDirection direction;
+  /// Message sort
+  final MessageSort? sort;
 
   /// Message id to fetch around, this will ignore [before], [after] and [sort] options.
   /// Limits in each direction will be half of the specified limit.
@@ -559,7 +580,7 @@ class FetchMessagesPayload extends Builder<Map<String, dynamic>> {
     this.limit,
     this.before,
     this.after,
-    required this.direction,
+    this.sort,
     this.nearby,
     this.includeUsers,
   });
@@ -570,7 +591,7 @@ class FetchMessagesPayload extends Builder<Map<String, dynamic>> {
       if (limit != null) 'limit': limit,
       if (before != null) 'before': before.toString(),
       if (after != null) 'after': after.toString(),
-      'direction': direction.value,
+      if (sort != null) 'sort': sort?.value,
       if (nearby != null) 'nearby': nearby.toString(),
       if (includeUsers != null) 'include_users': includeUsers,
     };

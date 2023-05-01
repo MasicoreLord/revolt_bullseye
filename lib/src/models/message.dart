@@ -1,3 +1,4 @@
+import 'package:revolt_bullseye/models.dart';
 import 'package:revolt_bullseye/src/models/attachment.dart';
 import 'package:revolt_bullseye/src/models/ulid.dart';
 import 'package:revolt_bullseye/src/utils/enum.dart';
@@ -19,6 +20,9 @@ class Message {
   /// Message content
   /// Can be a [String] or a subtype of [SystemContent] (if sent by the system user)
   final dynamic content;
+
+  // System Message Indicator
+  final System? system;
 
   /// Message attachments
   final List<Attachment>? attachments;
@@ -44,6 +48,7 @@ class Message {
     required this.channel,
     required this.author,
     required this.content,
+    this.system,
     this.attachments,
     this.edited,
     this.embeds,
@@ -60,6 +65,9 @@ class Message {
         content = json['content'] is String
             ? json['content']
             : SystemContent.define(json['content']),
+        system = json['system'] == null
+            ? null
+            : System.fromJson(json['system']),
         attachments = json['attachments'] == null
             ? null
             : [for (final e in json['attachments']) Attachment.fromJson(e)],
@@ -78,6 +86,32 @@ class Message {
         masquerade = json['masquerade'] == null
             ? null
             : Masquerade.fromJson(json['masquerade']);
+}
+
+class Messages {
+  /// Messages
+  final List<Message> messages;
+
+  /// Users
+  final List<User>? users;
+
+  /// Members
+  final List<Member>? members;
+
+  Messages({
+    required this.messages,
+    this.users,
+    this.members
+  });
+
+  Messages.fromJson(Map<String, dynamic> json)
+      : messages = json['messages'],
+      users = json['users'] == null
+        ? null
+        : [for (final e in json['users']) e],
+      members = json['members'] == null
+        ? null
+        : [for (final e in json['members']) e];
 }
 
 class EmbedType extends Enum<String> {
@@ -419,6 +453,17 @@ class NoneEmbed extends Embed {
 class UndefinedEmbed extends Embed {
   UndefinedEmbed({required EmbedType type}) : super(type: type);
   UndefinedEmbed.fromJson(Map<String, dynamic> json) : super.fromJson(json);
+}
+
+class System {
+  final String? type;
+  final String? content;
+
+  System({required this.type, required this.content});
+
+  System.fromJson(Map<String, dynamic> json)
+      : type = json['type'],
+        content = json['content'];
 }
 
 class SystemContentType extends Enum<String> {

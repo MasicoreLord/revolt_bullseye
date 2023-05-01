@@ -355,6 +355,35 @@ class RevoltRest {
     );
   }
 
+  /// Request account to be deleted.
+  Future<void> deleteAccount() async {
+    await fetchRaw(
+    'POST',
+    '/auth/account/delete'
+    );
+  }
+
+  /// Confirm account deletion.
+  Future<void> confirmAccountDeletion({
+    required String token,
+  }) async {
+      await fetchRaw(
+      'PUT',
+      '/auth/account/delete',
+      body: {
+        'token': token
+      }
+    );
+  }
+
+  /// Disable account.
+  Future<void> disableAccount() async {
+    await fetchRaw(
+    'POST',
+    '/auth/account/disable'
+    );
+  }
+
   // --- Session ---
 
   /// Login to an account.
@@ -423,6 +452,8 @@ class RevoltRest {
 
   // --- User Information ---
 
+  // TODO: Implement Fetch User Flags
+
   /// Retreive a user's information.
   Future<User> fetchUser({
     required Ulid userId,
@@ -490,17 +521,6 @@ class RevoltRest {
   //   ) as String;
   // }
 
-  Future<MutualFriendsAndServers> fetchMutualFriendsAndServers({
-    required Ulid userId,
-  }) async {
-    return MutualFriendsAndServers.fromJson(
-      await fetchRaw(
-        'GET',
-        '/users/$userId/mutual',
-      ),
-    );
-  }
-
   // --- Direct Messaging ---
 
   /// Fetch direct messages, including any DM and group DM conversations.
@@ -528,37 +548,41 @@ class RevoltRest {
 
   // --- Relationships ---
 
-  /// Fetch all relationships with other users.
-  Future<List<Relationship>> fetchRelationships() async {
-    return [
-      for (final e in await fetchRaw(
-        'GET',
-        '/users/relationships',
-      ))
-        Relationship.fromJson(e),
-    ];
-  }
-
-  /// Fetch relationship with another other user.
-  Future<RelationshipStatus> fetchRelationship({
+  /// Fetch mutual friends and servers
+  Future<MutualFriendsAndServers> fetchMutualFriendsAndServers({
     required Ulid userId,
   }) async {
-    return RelationshipStatus.from(
+    return MutualFriendsAndServers.fromJson(
       await fetchRaw(
         'GET',
-        '/users/$userId/relationship',
+        '/users/$userId/mutual',
       ),
     );
   }
 
-  /// Send a friend request to another user or accept another user's friend request.
-  Future<RelationshipStatus> sendFriendRequest({
+  /// Accept another user's friend request.
+  Future<RelationshipStatus> acceptFriendRequest({
     required Ulid userId,
   }) async {
     return RelationshipStatus.from(
       await fetchRaw(
         'PUT',
         '/users/$userId/friend',
+      ),
+    );
+  }
+
+  /// Send friend request.
+  Future<RelationshipStatus> sendFriendRequest({
+    required String username,
+  }) async {
+    return RelationshipStatus.from(
+      await fetchRaw(
+        'POST',
+        '/users/friend',
+        body: {
+          'username': username
+        }
       ),
     );
   }
@@ -707,6 +731,72 @@ class RevoltRest {
     );
   }
 
+  // TODO: Add payload for fetch messages, so it can actually be used
+  Future<Messages> fetchMessages({
+    required Ulid channelId,
+    FetchMessagesPayload? payload
+  }) async {
+    return Messages.fromJson(
+      await fetchRaw(
+        'GET',
+        '/channels/$channelId/messages',
+      ),
+    );
+  }
+
+  /// Acknowledges Message/Marks as Read
+  Future<void> acknowledgeMessage({
+    required Ulid channelId,
+    required Ulid messageId,
+  }) async {
+    await fetchRaw(
+      'PUT',
+      '/channels/$channelId/ack/$messageId'
+    );
+  }
+
+  /// Edit message in specified channel.
+  Future<Message> editMessage({
+    required Ulid channelId,
+    required Ulid messageId,
+    required EditMessagePayload payload,
+  }) async {
+    return Message.fromJson(
+      await fetchRaw(
+        'PATCH',
+        '/channels/$channelId/messages/$messageId',
+        body: payload.build(),
+      ),
+    );
+  }
+
+  /// Delete Message
+  Future<void> deleteMessage({
+    required Ulid channelId,
+    required Ulid messageId,
+  }) async {
+    await fetchRaw(
+      'DELETE',
+      '/channels/$channelId/messages/$messageId',
+    );
+  }
+
+  /// Bulk Delete Messages
+  Future<void> buckDeleteMessages({
+    required Ulid channelId,
+    required List<Ulid> messageIds,
+  }) async {
+    await fetchRaw(
+      'DELETE',
+      '/channels/$channelId/messages/bulk',
+      body: {
+        'ids': messageIds
+      }
+    );
+  }
+
+  // TODO: Search for Messages and Poll Message Changes
+
   // --- Groups ---
 
   /// Create a new group with friends.
@@ -783,6 +873,8 @@ class RevoltRest {
       ),
     );
   }
+
+  // TODO: Add Create Server, Delete/Leave Server, Edit Server, Mark Server As Read, and Create Channel
 
   // --- Server Members ---
 

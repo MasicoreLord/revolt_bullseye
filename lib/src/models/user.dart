@@ -36,6 +36,9 @@ class User {
   /// User flags
   final UserFlags? flags;
 
+  /// Privileged indicator
+  final bool? privileged;
+
   /// Bot information
   final BotInformation? bot;
 
@@ -50,6 +53,7 @@ class User {
     this.relationship,
     this.online,
     this.flags,
+    this.privileged,
     this.bot,
   });
 
@@ -73,6 +77,7 @@ class User {
             : RelationshipStatus.from(json['relationship']),
         online = json['online'],
         flags = json['flags'] == null ? null : UserFlags.fromRaw(json['flags']),
+        privileged = json['privileged'],
         bot = json['bot'] == null ? null : BotInformation.fromJson(json['bot']);
 }
 
@@ -158,6 +163,7 @@ class Relationship {
         status = RelationshipStatus.from(json['status']);
 }
 
+// TODO: Add more props
 /// Relationship with you status
 class RelationshipStatus extends Enum<String> {
   static const blocked = RelationshipStatus._create('Blocked');
