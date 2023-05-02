@@ -902,9 +902,58 @@ class RevoltRest {
 
   // --- Server Members ---
 
+  /// Removes user from server.
+  Future<void> kickUser({
+    required Ulid serverId,
+    required Ulid userId
+  }) async {
+    await fetchRaw(
+      'DELETE',
+      '/servers/$serverId/members/$userId'
+    );
+  }
+
+  /// Unbans user from server.
+  Future<void> unbanUser({
+    required Ulid serverId,
+    required Ulid userId
+  }) async {
+    await fetchRaw(
+      'DELETE',
+      '/servers/$serverId/bans/$userId'
+    );
+  }
+
+  // TODO: Add Fetch Member, Fetch Members, Edit Member, Ban Member, Fetch Bans, and Fetch Invites
+
   // --- Server Permissions ---
 
+  /// Removes server role.
+  Future<void> deleteRole({
+    required Ulid serverId,
+    required Ulid roleId
+  }) async {
+    await fetchRaw(
+      'DELETE',
+      '/servers/$serverId/roles/$roleId'
+    );
+  }
+
+  // TODO: Add Create Role, Edit Role, Set Role Permission, and Set Default Permission
+
   // --- Bots ---
+
+  // Removes bot.
+  Future<void> deleteBot({
+    required Ulid botId
+  }) async {
+    await fetchRaw(
+      'DELETE',
+      '/servers/$botId'
+    );
+  }
+
+  // TODO: Add Create Bot, Fetch Public Bot, Invite Bot, Fetch Bot. Edit Bot, and Fetch Owned Bots
 
   // --- Invites ---
 
@@ -944,5 +993,16 @@ class RevoltRest {
 
   // --- Sync ---
 
+  // TODO: Add Fetch Settings, Set Settings, and Fetch Unreads
+
   // --- Web Push ---
+
+  /// Unsubscribes from current web push subscription.
+  Future<void> webPushUnsubscribe() async {
+    await fetchRaw(
+      'POST',
+      '/push/unsubscribe');
+  }
+
+  // TODO: Add Push Subscribe
 }
